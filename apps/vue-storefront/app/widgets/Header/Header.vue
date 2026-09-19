@@ -65,6 +65,7 @@ const cartItemCount = ref(0)
   font-size: 1.0625rem;
   font-weight: 600;
   line-height: 1.4118em;
+  font-family: var(--okkly-font-family-heading);
 }
 
 @media (max-width: 768px) {
