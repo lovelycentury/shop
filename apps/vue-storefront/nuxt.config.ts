@@ -3,6 +3,17 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   devServer: { port: 8001 },
+  imports: {
+    // Auto-import composables/utils from the shared/ layer too, not just
+    // the default composables/ and utils/ directories.
+    dirs: [
+      "shared/composables",
+      "shared/configs",
+      "shared/mutations",
+      "shared/queries",
+      "shared/utils",
+    ],
+  },
   runtimeConfig: {
     public: {
       // Override with NUXT_PUBLIC_MEDUSA_BACKEND_URL / NUXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY

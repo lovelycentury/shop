@@ -23,7 +23,7 @@ const remapUseQueryResult = <
   TData,
   TError,
   P extends string,
-  TDefault extends TData | undefined = undefined,
+  TDefault extends TData | undefined | null = undefined,
 >(
   useQueryResult: UseQueryReturnType<TData, TError>,
   prefix: P,
