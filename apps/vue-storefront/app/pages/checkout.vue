@@ -1,3 +1,11 @@
+<script setup lang="ts">
+import { CheckoutScreen } from "~/features/checkout"
+
+useSeoMeta({
+  title: "Checkout",
+})
+</script>
+
 <template>
-  <div>Checkout</div>
+  <CheckoutScreen />
 </template>

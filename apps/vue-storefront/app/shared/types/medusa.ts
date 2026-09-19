@@ -11,6 +11,16 @@ export type AddCartLineItemVariables = {
   body: HttpTypes.StoreAddCartLineItem
 }
 
+export type UseAddShippingMethodProps = {
+  query?: SelectParams
+  headers?: ClientHeaders
+}
+
+export type AddShippingMethodVariables = {
+  cartId: string
+  body: HttpTypes.StoreAddCartShippingMethods
+}
+
 export type UseCartProps = {
   id: string
   query?: SelectParams
@@ -52,6 +62,12 @@ export type UsePaymentProvidersProps = {
   headers?: ClientHeaders
 }
 
+export type UseOrderProps = {
+  id: string
+  query?: SelectParams
+  headers?: ClientHeaders
+}
+
 export type UseProductByIdProps = {
   id: string
   query?: HttpTypes.StoreProductParams
@@ -78,6 +94,16 @@ export type UseProductsProps = {
 export type UseRegionsProps = {
   query?: HttpTypes.FindParams & HttpTypes.StoreRegionFilters
   headers?: ClientHeaders
+}
+
+export type UseShippingOptionsProps = {
+  query: HttpTypes.StoreGetShippingOptionList
+  headers?: ClientHeaders
+  /**
+   * Holds the request back while it is `false` - for a query whose params are
+   * not known yet, such as one waiting on the cart it prices options for.
+   */
+  enabled?: boolean
 }
 
 export type UseUpdateCartProps = {
@@ -124,6 +150,12 @@ export type Order = HttpTypes.StoreOrder
 export type Region = HttpTypes.StoreRegion
 
 export type ShippingOption = HttpTypes.StoreShippingOption
+
+/** A shipping option as returned for a specific cart - carries `calculated_price`. */
+export type CartShippingOption =
+  HttpTypes.StoreCartShippingOptionWithServiceZone
+
+export type RegionCountry = HttpTypes.StoreRegionCountry
 
 export type Customer = HttpTypes.StoreCustomer
 

@@ -15,7 +15,13 @@ export const useCurrentCart = () => {
 
   const queryResult = useQuery({
     queryKey: ["cart", cartId],
-    queryFn: () => sdk.store.cart.retrieve(cartId.value as string),
+    queryFn: () =>
+      sdk.store.cart.retrieve(cartId.value as string, {
+        // Everything else (items, addresses, shipping methods) comes back by
+        // default - the payment collection's sessions are the one relation
+        // the checkout steps need that isn't.
+        fields: "*payment_collection.payment_sessions",
+      }),
     enabled: computed(() => cartId.value !== null),
   })
 
