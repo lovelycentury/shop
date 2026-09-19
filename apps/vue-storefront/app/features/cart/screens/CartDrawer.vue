@@ -96,12 +96,6 @@ const goToCheckout = () => {
             <Icon name="iconArrowRight" font-size="small" />
           </template>
         </Button>
-
-        <button type="button" class="cart-drawer__view-cart" @click="close">
-          <Typography variant="label-md" color="secondary"
-            >View cart</Typography
-          >
-        </button>
       </footer>
     </template>
   </Drawer>
