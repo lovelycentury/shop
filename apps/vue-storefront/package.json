@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@medusajs/js-sdk": "^2.21.0",
+    "@nuxt/fonts": "^0.14.0",
     "@okkly/design-system": "^0.4.0",
     "@okkly/vue": "^0.4.0",
     "@tanstack/vue-query": "^5.103.1",

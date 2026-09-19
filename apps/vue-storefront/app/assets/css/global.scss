@@ -1,0 +1,8 @@
+// The design system only sets `font-family: var(--okkly-font-family-sans)`
+// inside its own component rules (Button, TextField, ...); plain elements
+// need it applied explicitly. `body` (not just `.app-shell`) so portaled
+// content — Dialogs, Popovers — inherits it too instead of falling back to
+// the UA serif.
+body {
+  font-family: var(--okkly-font-family-sans);
+}
