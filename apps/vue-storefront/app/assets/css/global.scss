@@ -3,6 +3,12 @@
 // need it applied explicitly. `body` (not just `.app-shell`) so portaled
 // content — Dialogs, Popovers — inherits it too instead of falling back to
 // the UA serif.
+//
+// `color` for the same reason: nothing sets a document-level text colour, so
+// anything not inside a design-system component renders in the UA's black —
+// unreadable on the dark shell. Setting it here means components can just
+// inherit instead of each repeating `color: var(--okkly-text-primary)`.
 body {
+  color: var(--okkly-text-primary);
   font-family: var(--okkly-font-family-sans);
 }

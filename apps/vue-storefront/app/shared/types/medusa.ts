@@ -61,6 +61,17 @@ export type UseProductByIdProps = {
 export type UseProductsProps = {
   query?: HttpTypes.StoreProductListParams
   headers?: ClientHeaders
+  /**
+   * Holds the request back while it is `false` - for a query whose params are
+   * not known yet, such as one waiting on the region its prices are computed
+   * for.
+   */
+  enabled?: boolean
+}
+
+export type UseRegionsProps = {
+  query?: HttpTypes.FindParams & HttpTypes.StoreRegionFilters
+  headers?: ClientHeaders
 }
 
 export type UseUpdateCartProps = {
