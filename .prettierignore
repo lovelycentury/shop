@@ -1,0 +1,25 @@
+# Dependencies and lockfiles
+node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build output and framework caches
+.turbo
+apps/backend/.medusa
+apps/backend/dist
+apps/storefront/.next
+apps/vue-storefront/.nuxt
+apps/vue-storefront/.output
+apps/vue-storefront/.data
+apps/vue-storefront/.nitro
+dist
+build
+out
+
+# Static assets
+**/public
+
+# Generated
+*.min.js
+*.min.css

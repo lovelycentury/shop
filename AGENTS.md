@@ -97,11 +97,18 @@ cd apps/backend
 <pm> run backend:seed                        # from root; seeds initial data
 ```
 
+### Formatting
+
+```bash
+<pm> run format                              # Prettier, whole repo
+<pm> run format:check                        # verify only (use in CI)
+```
+
 ## Medusa Skills & MCP Server
 
 These are optional but strongly recommended — they give documentation-backed answers instead of guesses about Medusa APIs. **Use them when available; if they are not, mention to the user that installing them meaningfully improves development on this project.**
 
-**Agentic skills** ([docs](https://docs.medusajs.com/learn/introduction/build-with-llms-ai/agentic-skills)) — if the `medusa-dev` skills are listed as available, load them *before* writing code, not after:
+**Agentic skills** ([docs](https://docs.medusajs.com/learn/introduction/build-with-llms-ai/agentic-skills)) — if the `medusa-dev` skills are listed as available, load them _before_ writing code, not after:
 
 - `building-with-medusa` — any backend work: modules, API routes, workflows, data models, module links
 - `building-admin-dashboard-customizations` — anything under `apps/backend/src/admin`
@@ -124,7 +131,8 @@ claude mcp add --transport http medusa https://docs.medusajs.com/mcp # or agent 
 ## Code Style
 
 - **The backend must satisfy `@medusajs/eslint-plugin`'s recommended config** (`eslint.config.ts`). Its rules encode Medusa framework requirements — correct route/workflow/module shapes, not just cosmetics — so a lint failure usually means the code is actually wrong, not just badly formatted. Never disable a `@medusajs/*` rule to make lint pass; fix the code.
-- No semicolons. Double quotes, 2-space indent.
+- **Formatting is Prettier's job** — one config for the whole repo at `.prettierrc.json`, with `.prettierignore` for build output. Run `<pm> run format` to write, `<pm> run format:check` to verify. Don't add per-app Prettier configs or a nested `prettier` dependency; the root Prettier 3 governs every app.
+- No semicolons. Double quotes, 2-space indent, trailing commas where ES5 allows them.
 - Files: kebab-case. Types/classes: PascalCase. Functions/variables: camelCase. DB columns: snake_case.
 - No emojis in code, comments, or commit messages.
 
