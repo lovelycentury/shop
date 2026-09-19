@@ -3,6 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   devServer: { port: 8001 },
+  css: ["@okkly/design-system/styles/index.scss", "@okkly/vue/style.css"],
   imports: {
     // Auto-import composables/utils from the shared/ layer too, not just
     // the default composables/ and utils/ directories.

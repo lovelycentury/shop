@@ -1,1 +1,3 @@
-<template></template>
+<template>
+  <div>Order failed</div>
+</template>
