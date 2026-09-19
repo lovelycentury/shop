@@ -75,7 +75,9 @@ const subtitle = computed(
           <Typography
             variant="h4"
             as="span"
-            :class="{ 'product-card__price-current--sale': formattedOriginalPrice }"
+            :class="{
+              'product-card__price-current--sale': formattedOriginalPrice,
+            }"
           >
             {{ formattedPrice }}
           </Typography>
@@ -122,7 +124,7 @@ const subtitle = computed(
   aspect-ratio: 4 / 5;
   overflow: hidden;
   border: 1px solid var(--okkly-glass-border);
-  border-radius: var(--okkly-radius-xl);
+  border-radius: var(--okkly-radius-lg);
   background: var(--okkly-bg-inset);
   transition:
     border-color 160ms ease,

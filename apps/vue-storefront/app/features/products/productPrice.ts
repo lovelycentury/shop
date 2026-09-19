@@ -1,4 +1,4 @@
-import type { Product } from "~/shared/types/medusa"
+import type { Product, ProductVariant } from "~/shared/types/medusa"
 
 export type ProductPrice = {
   /** What the customer pays, already in major units (Medusa v2 amounts are decimal). */
@@ -27,37 +27,45 @@ export const formatOriginalPrice = (price: ProductPrice): string | null =>
     : formatPrice({ ...price, amount: price.originalAmount })
 
 /**
+ * A single variant's price, or `null` when the Store API sent back no
+ * `calculated_price` - which happens whenever the request had no pricing
+ * context (`region_id`) or the variant simply has no price in that region.
+ */
+export const getVariantPrice = (
+  variant: ProductVariant
+): ProductPrice | null => {
+  const price = variant.calculated_price
+
+  if (!price || price.calculated_amount === null || !price.currency_code) {
+    return null
+  }
+
+  return {
+    amount: price.calculated_amount,
+    currencyCode: price.currency_code,
+    originalAmount:
+      price.original_amount !== null &&
+      price.original_amount > price.calculated_amount
+        ? price.original_amount
+        : null,
+  }
+}
+
+/**
  * The cheapest priced variant - what a grid card shows as the product's
- * "from" price.
- *
- * Returns `null` when no variant carries a price, which is what the Store API
- * sends back whenever the request had no pricing context (`region_id`) or the
- * product simply has no price in that region. Cards render without a price
- * rather than with a misleading zero.
+ * "from" price. Cards render without a price rather than with a misleading
+ * zero when nothing carries one.
  */
 export const getProductPrice = (product: Product): ProductPrice | null => {
   let cheapest: ProductPrice | null = null
 
   for (const variant of product.variants ?? []) {
-    const price = variant.calculated_price
+    const price = getVariantPrice(variant)
 
-    if (!price || price.calculated_amount === null || !price.currency_code) {
-      continue
-    }
+    if (price === null) continue
+    if (cheapest !== null && cheapest.amount <= price.amount) continue
 
-    if (cheapest !== null && cheapest.amount <= price.calculated_amount) {
-      continue
-    }
-
-    cheapest = {
-      amount: price.calculated_amount,
-      currencyCode: price.currency_code,
-      originalAmount:
-        price.original_amount !== null &&
-        price.original_amount > price.calculated_amount
-          ? price.original_amount
-          : null,
-    }
+    cheapest = price
   }
 
   return cheapest

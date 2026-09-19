@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue"
-
 import { Badge, Icon, IconButton } from "@okkly/vue"
 
 import { isBasketOpen } from "~/shared/store/basketStore"
 
-// Placeholder until the cart is wired to a real basket query.
-const cartItemCount = ref(0)
+const { itemCount: cartItemCount } = useCurrentCart()
 </script>
 
 <template>
