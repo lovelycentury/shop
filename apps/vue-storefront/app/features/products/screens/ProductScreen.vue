@@ -13,6 +13,8 @@ import {
   Typography,
 } from "@okkly/vue"
 
+import QuantityStepper from "~/shared/components/QuantityStepper.vue"
+
 import ProductGrid from "../components/ProductGrid.vue"
 import ProductGallery from "../components/ProductGallery.vue"
 import { swatchColor } from "../optionSwatch"
@@ -184,30 +186,7 @@ const detailsText = computed(() => {
           </div>
 
           <div class="product-screen__cart-row">
-            <div
-              class="product-screen__quantity"
-              role="group"
-              aria-label="Quantity"
-            >
-              <button
-                type="button"
-                class="product-screen__quantity-btn"
-                :disabled="quantity <= 1"
-                aria-label="Decrease quantity"
-                @click="quantity = Math.max(1, quantity - 1)"
-              >
-                <Icon name="iconMinus" font-size="small" />
-              </button>
-              <span class="product-screen__quantity-value">{{ quantity }}</span>
-              <button
-                type="button"
-                class="product-screen__quantity-btn"
-                aria-label="Increase quantity"
-                @click="quantity += 1"
-              >
-                <Icon name="iconPlus" font-size="small" />
-              </button>
-            </div>
+            <QuantityStepper v-model="quantity" />
 
             <Button
               variant="primary"
@@ -388,44 +367,6 @@ const detailsText = computed(() => {
   align-items: center;
   gap: var(--okkly-space-3);
   width: 100%;
-}
-
-.product-screen__quantity {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  border: 1px solid var(--okkly-border-default);
-  border-radius: var(--okkly-radius-md);
-  overflow: hidden;
-}
-
-.product-screen__quantity-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--okkly-space-2);
-  border: none;
-  background: none;
-  color: var(--okkly-text-primary);
-  cursor: pointer;
-}
-
-.product-screen__quantity-btn:hover:not(:disabled) {
-  background: var(--okkly-glass-fill);
-}
-
-.product-screen__quantity-btn:disabled {
-  color: var(--okkly-text-muted);
-  cursor: not-allowed;
-}
-
-.product-screen__quantity-value {
-  min-width: 1.5rem;
-  padding: 0 var(--okkly-space-1);
-  text-align: center;
-  font-size: 0.8125rem;
-  font-weight: var(--okkly-font-weight-medium);
-  color: var(--okkly-text-primary);
 }
 
 .product-screen__accordions {

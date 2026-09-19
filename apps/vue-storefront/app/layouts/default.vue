@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AnimatedBackground } from "@okkly/vue"
 
+import { CartDrawer } from "~/features/cart"
 import { Header } from "~/widgets/Header"
 </script>
 
@@ -15,6 +16,7 @@ import { Header } from "~/widgets/Header"
         <slot />
       </main>
     </div>
+    <CartDrawer />
   </div>
 </template>
 

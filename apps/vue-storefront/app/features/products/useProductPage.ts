@@ -1,5 +1,6 @@
 import { computed, ref, watch } from "vue"
 
+import { useCurrentCart } from "~/features/cart"
 import type { Product, ProductVariant } from "~/shared/types/medusa"
 
 import { getProductPrice, getVariantPrice } from "./productPrice"

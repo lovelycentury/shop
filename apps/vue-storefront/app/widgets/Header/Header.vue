@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Badge, Icon, IconButton } from "@okkly/vue"
 
-import { isBasketOpen } from "~/shared/store/basketStore"
+import { useCurrentCart } from "~/features/cart"
+import { isCartOpen } from "~/shared/store/cartStore"
 
 const { itemCount: cartItemCount } = useCurrentCart()
 </script>
@@ -22,7 +23,7 @@ const { itemCount: cartItemCount } = useCurrentCart()
         <IconButton
           variant="ghost"
           aria-label="Open cart"
-          @click="isBasketOpen = true"
+          @click="isCartOpen = true"
         >
           <Icon name="iconShoppingCart" font-size="small" />
         </IconButton>

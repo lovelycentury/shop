@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/vue-query"
 import { computed } from "vue"
 
+import { useCartId } from "./useCartId"
+
 /**
  * The visitor's cart, created lazily on the first `addItem` rather than on
  * every page load - a browsing session that never buys anything should never
