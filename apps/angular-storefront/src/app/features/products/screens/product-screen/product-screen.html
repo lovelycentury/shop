@@ -3,7 +3,18 @@
     <okkly-breadcrumbs [items]="breadcrumbs()" (click)="onBreadcrumbClick($event)" />
   }
 
-  @if (isError()) {
+  @if (isNotFound()) {
+    <div class="product-screen__not-found">
+      <span class="product-screen__not-found-badge">
+        <okkly-icon [icon]="iconPackage" fontSize="large" />
+      </span>
+      <h1 okklyTypography variant="h2">Product not found</h1>
+      <p okklyTypography variant="body-md" color="secondary">
+        It may have been removed, or the link may be mistyped.
+      </p>
+      <a okklyButton routerLink="/" variant="primary" size="large" shape="pill">Browse all products</a>
+    </div>
+  } @else if (isError()) {
     <okkly-alert severity="danger" title="This product could not be loaded" class="product-screen__alert">
       {{ error() ?? 'Something went wrong while contacting the store.' }}
       <button okklyButton okklyAlertAction variant="soft" size="small" (click)="refetch()">

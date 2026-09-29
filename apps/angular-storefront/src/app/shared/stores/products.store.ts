@@ -4,6 +4,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { filter, from, mergeMap, pipe, tap } from 'rxjs';
 import type { HttpTypes } from '@medusajs/types';
+import { type AppError, toAppError } from '../../core/models/app-error';
 import { injectMedusaSdk } from '../../core/services/medusa-sdk';
 import { withTransferState } from './with-transfer-state';
 
@@ -15,7 +16,7 @@ export type ProductQuery = {
 type ProductsState = {
   /** The region every cached product was priced for. */
   regionId: string | null;
-  error: string | null;
+  error: AppError | null;
   pendingIds: string[];
 };
 
@@ -71,7 +72,7 @@ export const ProductsStore = signalStore(
               patchState(store, upsertEntity(product), removePendingId(id));
             }
           },
-          error: (error: unknown) => patchState(store, { error: String(error) }, removePendingId(id)),
+          error: (error: unknown) => patchState(store, { error: toAppError(error) }, removePendingId(id)),
         }),
       );
 

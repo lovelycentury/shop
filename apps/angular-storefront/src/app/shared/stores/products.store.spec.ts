@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { FetchError } from '@medusajs/js-sdk';
 import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { ProductsStore } from './products.store';
 
@@ -97,13 +98,26 @@ describe('ProductsStore', () => {
 
     store.loadById({ id: 'prod_1', regionId: 'reg_1' });
     await flushMicrotasks();
-    expect(store.error()).toBe('Error: network error');
+    expect(store.error()?.kind).toBe('network');
 
     store.loadById({ id: 'prod_1', regionId: 'reg_1' });
     await flushMicrotasks();
 
     expect(retrieve).toHaveBeenCalledTimes(2);
     expect(store.getById('prod_1')?.title).toBe('prod_1@reg_1');
+  });
+
+  it('reports an unknown product as not-found', async () => {
+    const retrieve = vi
+      .fn<Retrieve>()
+      .mockRejectedValue(new FetchError('Product with id: nope was not found', 'Not Found', 404));
+    const store = setup(retrieve);
+
+    store.loadById({ id: 'nope', regionId: 'reg_1' });
+    await flushMicrotasks();
+
+    expect(store.error()).toMatchObject({ kind: 'not-found', status: 404 });
+    expect(store.isLoading('nope')).toBe(false);
   });
 
   it('refreshById refetches even when the product is already cached', async () => {

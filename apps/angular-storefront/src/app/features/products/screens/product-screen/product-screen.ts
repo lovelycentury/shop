@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  RESPONSE_INIT,
   computed,
   effect,
   inject,
@@ -9,7 +10,8 @@ import {
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   OkklyAccordion,
   OkklyAccordionDetails,
@@ -24,7 +26,7 @@ import {
   OkklySkeleton,
   OkklyTypography,
 } from '@okkly/angular';
-import { iconArrowRight, iconRefreshCw } from '@okkly/icons';
+import { iconArrowRight, iconPackage, iconRefreshCw } from '@okkly/icons';
 import { QuantityStepper } from '../../../../shared/components/quantity-stepper/quantity-stepper';
 import { CartStore } from '../../../../shared/stores/cart.store';
 import { RelatedProductsStore } from '../../../../shared/stores/product-list.store';
@@ -73,6 +75,7 @@ const RELATED_PRODUCTS_COUNT = 4;
     ProductGallery,
     ProductGrid,
     QuantityStepper,
+    RouterLink,
   ],
   providers: [RelatedProductsStore],
   templateUrl: './product-screen.html',
@@ -87,6 +90,7 @@ export class ProductScreen {
   private readonly cart = inject(CartStore);
 
   protected readonly iconArrowRight = iconArrowRight;
+  protected readonly iconPackage = iconPackage;
   protected readonly iconRefreshCw = iconRefreshCw;
   protected readonly swatchColor = swatchColor;
 
@@ -100,10 +104,13 @@ export class ProductScreen {
 
   protected readonly product = computed(() => this.products.getById(this.productId()) ?? null);
 
-  protected readonly error = computed(() => this.regions.error() ?? this.products.error());
-  protected readonly isError = computed(() => this.error() !== null);
+  /** Medusa has no product with this id - nothing to retry. */
+  protected readonly isNotFound = computed(() => this.products.error()?.kind === 'not-found');
+
+  protected readonly error = computed(() => this.regions.error() ?? this.products.error()?.message ?? null);
+  protected readonly isError = computed(() => !this.isNotFound() && this.error() !== null);
   protected readonly isPending = computed(
-    () => !this.isError() && !this.hasNoRegion() && this.product() === null,
+    () => !this.isError() && !this.isNotFound() && !this.hasNoRegion() && this.product() === null,
   );
 
   protected readonly breadcrumbs = computed(() => {
@@ -188,6 +195,7 @@ export class ProductScreen {
 
   constructor() {
     this.regions.load();
+    this.reportNotFound();
 
     effect(() => {
       const regionId = this.regionId();
@@ -201,6 +209,25 @@ export class ProductScreen {
           this.related.load({ page: 1, regionId });
         });
       }
+    });
+  }
+
+  /**
+   * A missing product must answer 404, not 200 - otherwise search engines
+   * index the "not found" page as a real product page. `RESPONSE_INIT` is
+   * the server's response (`null` in the browser); it's read after the
+   * render settles, so setting it once the store reports not-found is in
+   * time.
+   */
+  private reportNotFound(): void {
+    const responseInit = inject(RESPONSE_INIT, { optional: true });
+    const title = inject(Title);
+
+    effect(() => {
+      if (!this.isNotFound()) return;
+
+      title.setTitle('Product not found');
+      if (responseInit) responseInit.status = 404;
     });
   }
 
