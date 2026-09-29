@@ -5,6 +5,7 @@ import { tapResponse } from '@ngrx/operators';
 import { filter, from, pipe, switchMap, tap } from 'rxjs';
 import type { HttpTypes } from '@medusajs/types';
 import { injectMedusaSdk } from '../../core';
+import { withTransferState } from './with-transfer-state';
 
 type RegionsState = {
   regions: HttpTypes.StoreRegion[] | null;
@@ -81,4 +82,5 @@ export const RegionsStore = signalStore(
       },
     };
   }),
+  withTransferState('regions'),
 );

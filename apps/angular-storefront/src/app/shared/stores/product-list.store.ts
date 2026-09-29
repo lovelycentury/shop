@@ -1,10 +1,18 @@
 import { computed } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+  patchState,
+  signalStore,
+  signalStoreFeature,
+  withComputed,
+  withMethods,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { filter, from, pipe, switchMap, tap } from 'rxjs';
 import type { HttpTypes } from '@medusajs/types';
 import { injectMedusaSdk } from '../../core/services/medusa-sdk';
+import { withTransferState } from './with-transfer-state';
 
 /** Cards per page - a multiple of 2, 3 and 4, so no grid row is left ragged. */
 export const PRODUCTS_PAGE_SIZE = 12;
@@ -52,62 +60,85 @@ const sameQuery = (a: ProductListQuery | null, b: ProductListQuery) =>
  * request is in flight (e.g. the back button changing `?page=`), so a newer
  * page cancels the older request instead.
  */
+const withProductList = () =>
+  signalStoreFeature(
+    withState(initialState),
+    withComputed(({ count, loading, query }) => ({
+      pageCount: computed(() => Math.max(1, Math.ceil(count() / PRODUCTS_PAGE_SIZE))),
+      /** A newer page is loading over one already on screen. */
+      stale: computed(() => loading() && query() !== null),
+    })),
+    withMethods((store) => {
+      const sdk = injectMedusaSdk();
+
+      const fetchPage = (query: ProductListQuery) =>
+        from(
+          sdk.store.product.list({
+            limit: PRODUCTS_PAGE_SIZE,
+            offset: (query.page - 1) * PRODUCTS_PAGE_SIZE,
+            // Variants carry no price unless asked for explicitly, and only
+            // ever relative to a region.
+            fields: '*variants.calculated_price',
+            region_id: query.regionId,
+          }),
+        ).pipe(
+          tapResponse({
+            next: ({ products, count }) =>
+              patchState(store, { products, count, query, loading: false }),
+            // Roll `requested` back so `load` will retry this page.
+            error: (error: unknown) =>
+              patchState(store, (s) => ({
+                requested: s.query,
+                loading: false,
+                error: String(error),
+              })),
+          }),
+        );
+
+      return {
+        /**
+         * Skips the request if this exact page is already on screen or
+         * already in flight. Compared against the latest *requested* page,
+         * not the loaded one: going 1 → 2 → back to 1 before 2 lands must
+         * still fetch 1, or page 2's late response would win.
+         */
+        load: rxMethod<ProductListQuery>(
+          pipe(
+            filter((query) => !sameQuery(store.requested(), query)),
+            tap((query) => patchState(store, { requested: query, loading: true, error: null })),
+            switchMap(fetchPage),
+          ),
+        ),
+
+        /** Refetches the given page even if it is already on screen. */
+        refresh: rxMethod<ProductListQuery>(
+          pipe(
+            tap((query) => patchState(store, { requested: query, loading: true, error: null })),
+            switchMap(fetchPage),
+          ),
+        ),
+
+        getAll(): HttpTypes.StoreProduct[] {
+          return store.products();
+        },
+      };
+    }),
+  );
+
+/** The catalogue listing's page - the one `ProductsScreen` shows. */
 export const ProductListStore = signalStore(
   { providedIn: 'root' },
-  withState(initialState),
-  withComputed(({ count, loading, query }) => ({
-    pageCount: computed(() => Math.max(1, Math.ceil(count() / PRODUCTS_PAGE_SIZE))),
-    /** A newer page is loading over one already on screen. */
-    stale: computed(() => loading() && query() !== null),
-  })),
-  withMethods((store) => {
-    const sdk = injectMedusaSdk();
+  withProductList(),
+  withTransferState('product-list'),
+);
 
-    const fetchPage = (query: ProductListQuery) =>
-      from(
-        sdk.store.product.list({
-          limit: PRODUCTS_PAGE_SIZE,
-          offset: (query.page - 1) * PRODUCTS_PAGE_SIZE,
-          // Variants carry no price unless asked for explicitly, and only
-          // ever relative to a region.
-          fields: '*variants.calculated_price',
-          region_id: query.regionId,
-        }),
-      ).pipe(
-        tapResponse({
-          next: ({ products, count }) => patchState(store, { products, count, query, loading: false }),
-          // Roll `requested` back so `load` will retry this page.
-          error: (error: unknown) =>
-            patchState(store, (s) => ({ requested: s.query, loading: false, error: String(error) })),
-        }),
-      );
-
-    return {
-      /**
-       * Skips the request if this exact page is already on screen or
-       * already in flight. Compared against the latest *requested* page,
-       * not the loaded one: going 1 → 2 → back to 1 before 2 lands must
-       * still fetch 1, or page 2's late response would win.
-       */
-      load: rxMethod<ProductListQuery>(
-        pipe(
-          filter((query) => !sameQuery(store.requested(), query)),
-          tap((query) => patchState(store, { requested: query, loading: true, error: null })),
-          switchMap(fetchPage),
-        ),
-      ),
-
-      /** Refetches the given page even if it is already on screen. */
-      refresh: rxMethod<ProductListQuery>(
-        pipe(
-          tap((query) => patchState(store, { requested: query, loading: true, error: null })),
-          switchMap(fetchPage),
-        ),
-      ),
-
-      getAll(): HttpTypes.StoreProduct[] {
-        return store.products();
-      },
-    };
-  }),
+/**
+ * The product page's "You may also like" row. A class of its own rather
+ * than a second `ProductListStore` instance: loading it must never replace
+ * the page the catalogue listing has on screen, and its server-rendered
+ * state needs its own transfer key.
+ */
+export const RelatedProductsStore = signalStore(
+  withProductList(),
+  withTransferState('related-products'),
 );

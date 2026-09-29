@@ -2,14 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  PLATFORM_ID,
   computed,
   effect,
   inject,
   untracked,
   viewChild,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Meta } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -49,10 +47,10 @@ const parsePage = (raw: string | null): number => {
  * results can be linked to, reloaded and reached again with the back button.
  * Page 1 leaves the param off entirely, keeping the canonical URL clean.
  *
- * Data is only requested in the browser: the Medusa SDK fetches outside
- * anything Angular's SSR waits for, so a server-side request would resolve
- * after the HTML is already sent. The server renders skeletons, which is
- * exactly what the browser's first render shows too — so hydration matches.
+ * Rendered with its data on the server: every SDK request is a pending
+ * task SSR waits for, and the stores hand their state to the browser
+ * (`withTransferState`), so hydration starts from the page the HTML shows
+ * and the browser's `load` calls skip what's already there.
  */
 @Component({
   selector: 'app-products-screen',
@@ -114,10 +112,6 @@ export class ProductsScreen {
 
   constructor() {
     inject(Meta).updateTag({ name: 'description', content: 'Browse the catalogue.' });
-
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) {
-      return;
-    }
 
     this.regions.load();
 

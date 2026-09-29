@@ -1,13 +1,19 @@
-import { Service, inject, isDevMode } from '@angular/core';
+import { PendingTasks, Service, inject, isDevMode } from '@angular/core';
 import Medusa, { type ClientHeaders, type FetchArgs, type FetchInput } from '@medusajs/js-sdk';
 import { environment } from '../../../environment';
 import { MedusaLocaleService } from './medusa-locale';
 
 const LOCALE_HEADER_NAME = 'x-medusa-locale';
 
-/** Builds the SDK, stamping every request with the locale read fresh on each call. */
+/**
+ * Builds the SDK, stamping every request with the locale read fresh on each
+ * call. Every request is also a pending task: the SDK calls the global
+ * `fetch`, which Angular knows nothing about, so without it SSR would
+ * serialize the page before any response has landed.
+ */
 const createMedusaSdk = (): Medusa => {
   const localeService = inject(MedusaLocaleService);
+  const pendingTasks = inject(PendingTasks);
 
   const sdk = new Medusa({
     baseUrl: environment.medusaBackendUrl,
@@ -21,7 +27,8 @@ const createMedusaSdk = (): Medusa => {
     const headers: ClientHeaders = { ...init?.headers };
     headers[LOCALE_HEADER_NAME] ??= localeService.locale();
 
-    return originalFetch(input, { ...init, headers });
+    const removeTask = pendingTasks.add();
+    return originalFetch<T>(input, { ...init, headers }).finally(removeTask);
   }) as typeof sdk.client.fetch;
 
   return sdk;

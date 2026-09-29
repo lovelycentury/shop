@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  PLATFORM_ID,
   computed,
   effect,
   inject,
@@ -9,7 +8,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -29,7 +27,7 @@ import {
 import { iconArrowRight, iconRefreshCw } from '@okkly/icons';
 import { QuantityStepper } from '../../../../shared/components/quantity-stepper/quantity-stepper';
 import { CartStore } from '../../../../shared/stores/cart.store';
-import { ProductListStore } from '../../../../shared/stores/product-list.store';
+import { RelatedProductsStore } from '../../../../shared/stores/product-list.store';
 import { ProductsStore } from '../../../../shared/stores/products.store';
 import { RegionsStore } from '../../../../shared/stores/regions.store';
 import { ProductGallery } from '../../components/product-gallery/product-gallery';
@@ -53,8 +51,9 @@ const RELATED_PRODUCTS_COUNT = 4;
  * color/size/quantity picks, the variant and price those resolve to,
  * "you may also like" suggestions, and add-to-cart.
  *
- * Like `ProductsScreen`, data is only requested in the browser — the server
- * renders the skeleton the browser's first render also shows.
+ * Like `ProductsScreen`, it's server-rendered with its data: the stores
+ * hand the server's state to the browser (`withTransferState`), so
+ * hydration starts from the same product the HTML shows.
  */
 @Component({
   selector: 'app-product-screen',
@@ -75,9 +74,7 @@ const RELATED_PRODUCTS_COUNT = 4;
     ProductGrid,
     QuantityStepper,
   ],
-  // Its own instance for the "You may also like" row, so loading it never
-  // replaces the page the catalogue listing has on screen.
-  providers: [ProductListStore],
+  providers: [RelatedProductsStore],
   templateUrl: './product-screen.html',
   styleUrl: './product-screen.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,7 +83,7 @@ export class ProductScreen {
   private readonly router = inject(Router);
   private readonly regions = inject(RegionsStore);
   private readonly products = inject(ProductsStore);
-  private readonly related = inject(ProductListStore);
+  private readonly related = inject(RelatedProductsStore);
   private readonly cart = inject(CartStore);
 
   protected readonly iconArrowRight = iconArrowRight;
@@ -190,10 +187,6 @@ export class ProductScreen {
   });
 
   constructor() {
-    if (!isPlatformBrowser(inject(PLATFORM_ID))) {
-      return;
-    }
-
     this.regions.load();
 
     effect(() => {

@@ -5,6 +5,7 @@ import { tapResponse } from '@ngrx/operators';
 import { filter, from, mergeMap, pipe, tap } from 'rxjs';
 import type { HttpTypes } from '@medusajs/types';
 import { injectMedusaSdk } from '../../core/services/medusa-sdk';
+import { withTransferState } from './with-transfer-state';
 
 export type ProductQuery = {
   id: string;
@@ -108,4 +109,5 @@ export const ProductsStore = signalStore(
       },
     };
   }),
+  withTransferState('products'),
 );
