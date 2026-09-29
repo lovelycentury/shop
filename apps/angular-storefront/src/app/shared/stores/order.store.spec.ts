@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { MEDUSA_SDK } from '../../core/services/medusa-sdk';
+import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { OrderStore } from './order.store';
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function setup(retrieve: (id: string) => Promise<unknown>) {
   TestBed.configureTestingModule({
-    providers: [{ provide: MEDUSA_SDK, useValue: { store: { order: { retrieve } } } }],
+    providers: [{ provide: MedusaSdk, useValue: { store: { order: { retrieve } } } }],
   });
 
   return TestBed.inject(OrderStore);

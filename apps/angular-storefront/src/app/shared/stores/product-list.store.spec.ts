@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { MEDUSA_SDK } from '../../core/services/medusa-sdk';
+import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { PRODUCTS_PAGE_SIZE, ProductListStore } from './product-list.store';
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -9,7 +9,7 @@ type ListQuery = { offset: number };
 
 function setup(list: (query: ListQuery) => Promise<unknown>) {
   TestBed.configureTestingModule({
-    providers: [{ provide: MEDUSA_SDK, useValue: { store: { product: { list } } } }],
+    providers: [{ provide: MedusaSdk, useValue: { store: { product: { list } } } }],
   });
 
   return TestBed.inject(ProductListStore);

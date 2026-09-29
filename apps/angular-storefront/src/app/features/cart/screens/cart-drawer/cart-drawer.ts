@@ -80,8 +80,13 @@ export class CartDrawer {
   protected readonly items = computed(() => this.cart.cart()?.items ?? []);
   protected readonly currencyCode = computed(() => this.cart.cart()?.currency_code ?? 'usd');
 
+  /** Items only — Medusa's `subtotal` also counts a chosen shipping method, which isn't in this list. */
   protected readonly subtotal = computed(() =>
-    formatPrice({ amount: this.cart.cart()?.subtotal ?? 0, currencyCode: this.currencyCode(), originalAmount: null }),
+    formatPrice({
+      amount: this.cart.cart()?.item_subtotal ?? 0,
+      currencyCode: this.currencyCode(),
+      originalAmount: null,
+    }),
   );
 
   /** The cart is known to exist but hasn't landed yet. */

@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { MEDUSA_SDK } from '../../core/services/medusa-sdk';
+import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { RegionsStore } from './regions.store';
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function setup(list: () => Promise<unknown>) {
   TestBed.configureTestingModule({
-    providers: [{ provide: MEDUSA_SDK, useValue: { store: { region: { list } } } }],
+    providers: [{ provide: MedusaSdk, useValue: { store: { region: { list } } } }],
   });
 
   return TestBed.inject(RegionsStore);

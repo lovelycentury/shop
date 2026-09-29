@@ -1,37 +1,48 @@
-import { InjectionToken, inject, isDevMode } from '@angular/core';
+import { Service, inject, isDevMode } from '@angular/core';
 import Medusa, { type ClientHeaders, type FetchArgs, type FetchInput } from '@medusajs/js-sdk';
 import { environment } from '../../../environment';
 import { MedusaLocaleService } from './medusa-locale';
 
 const LOCALE_HEADER_NAME = 'x-medusa-locale';
 
+/** Builds the SDK, stamping every request with the locale read fresh on each call. */
+const createMedusaSdk = (): Medusa => {
+  const localeService = inject(MedusaLocaleService);
+
+  const sdk = new Medusa({
+    baseUrl: environment.medusaBackendUrl,
+    publishableKey: environment.medusaPublishableKey,
+    debug: isDevMode(),
+  });
+
+  const originalFetch = sdk.client.fetch.bind(sdk.client);
+
+  sdk.client.fetch = (<T>(input: FetchInput, init?: FetchArgs): Promise<T> => {
+    const headers: ClientHeaders = { ...init?.headers };
+    headers[LOCALE_HEADER_NAME] ??= localeService.locale();
+
+    return originalFetch(input, { ...init, headers });
+  }) as typeof sdk.client.fetch;
+
+  return sdk;
+};
+
 /**
- * App-wide Medusa SDK instance, stamping every request with the current
- * locale (read fresh on each call, so a later locale change is picked up
- * without recreating the SDK).
+ * App-wide Medusa SDK instance — `inject(MedusaSdk)` returns what the
+ * factory builds, created once, the first time it's injected.
+ *
+ * The class is only a DI token: it's never instantiated (the factory does
+ * the `new`). A decorator can't change a class's type, so the interface of
+ * the same name merges `Medusa`'s members into it — without that,
+ * `inject(MedusaSdk)` would be typed as this empty class. Not `extends
+ * Medusa`: that would inherit Medusa's `constructor(config)`, and a
+ * `@Service` class may not have constructor parameters.
  */
-export const MEDUSA_SDK = new InjectionToken<Medusa>('MEDUSA_SDK', {
-  providedIn: 'root',
-  factory: () => {
-    const localeService = inject(MedusaLocaleService);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface MedusaSdk extends Medusa {}
 
-    const sdk = new Medusa({
-      baseUrl: environment.medusaBackendUrl,
-      publishableKey: environment.medusaPublishableKey,
-      debug: isDevMode(),
-    });
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+@Service({ factory: createMedusaSdk })
+export abstract class MedusaSdk {}
 
-    const originalFetch = sdk.client.fetch.bind(sdk.client);
-
-    sdk.client.fetch = (<T>(input: FetchInput, init?: FetchArgs): Promise<T> => {
-      const headers: ClientHeaders = { ...init?.headers };
-      headers[LOCALE_HEADER_NAME] ??= localeService.locale();
-
-      return originalFetch(input, { ...init, headers });
-    }) as typeof sdk.client.fetch;
-
-    return sdk;
-  },
-});
-
-export const injectMedusaSdk = (): Medusa => inject(MEDUSA_SDK);
+export const injectMedusaSdk = (): Medusa => inject(MedusaSdk);

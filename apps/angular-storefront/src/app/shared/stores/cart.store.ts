@@ -17,7 +17,6 @@ type CartState = {
   loading: boolean
   error: string | null
   pendingLineItemIds: string[]
-  completedOrder: HttpTypes.StoreOrder | null
 }
 
 const initialState: CartState = {
@@ -25,8 +24,30 @@ const initialState: CartState = {
   loading: false,
   error: null,
   pendingLineItemIds: [],
-  completedOrder: null,
 }
+
+/** The outcome of a cart-level mutation; `error` is user-facing. */
+export type CartMutationResult = { ok: true } | { ok: false; error: string }
+
+export type CompleteCartResult =
+  | { kind: "order"; order: HttpTypes.StoreOrder }
+  /** Medusa refused to place the order (e.g. payment not authorized). */
+  | { kind: "rejected"; message: string }
+  /** The request itself failed, or couldn't be made. */
+  | { kind: "failed"; message: string }
+
+const NO_CART = "There is no cart to update."
+const CART_BUSY = "The cart is still being updated — try again in a moment."
+
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error)
+
+/**
+ * Everything else (items, addresses, shipping methods) comes back by
+ * default — the payment collection's sessions are the one relation the
+ * checkout steps need that isn't.
+ */
+const CART_FIELDS = "*payment_collection.payment_sessions"
 
 /** `addItem` has no line item id yet, so its pending marker is keyed by variant. */
 const addPendingKey = (variantId: string) => `add:${variantId}`
@@ -47,6 +68,8 @@ const removePendingLineItemId = (id: string) => (state: CartState) => ({
  * Cart-level mutations (`updateCart`, `addShippingMethod`,
  * `createPaymentSession`, `complete`) share the `loading` flag — there's
  * only ever one active cart, so only one of these makes sense at a time.
+ * They're plain async rather than `rxMethod`: each is one checkout step's
+ * submit, and the step has to `await` the outcome before moving on.
  * Line-item mutations (`updateLineItem`, `removeLineItem`, `addItem`) are
  * keyed in `pendingLineItemIds`, so acting on one item never blocks
  * another.
@@ -64,20 +87,33 @@ export const CartStore = signalStore(
     const cartIdService = inject(CartIdService)
 
     const fetchCart = (cartId: string) =>
-      from(
-        sdk.store.cart.retrieve(cartId, {
-          // Everything else (items, addresses, shipping methods) comes back
-          // by default — the payment collection's sessions are the one
-          // relation the checkout steps need that isn't.
-          fields: "*payment_collection.payment_sessions",
-        })
-      ).pipe(
+      from(sdk.store.cart.retrieve(cartId, { fields: CART_FIELDS })).pipe(
         tapResponse({
           next: ({ cart }) => patchState(store, { cart, loading: false }),
           error: (error: unknown) =>
             patchState(store, { loading: false, error: String(error) }),
         })
       )
+
+    /** Runs one cart-level mutation that resolves to the updated cart. */
+    const mutateCart = async (
+      request: (cart: HttpTypes.StoreCart) => Promise<HttpTypes.StoreCart>
+    ): Promise<CartMutationResult> => {
+      const cart = store.cart()
+      if (!cart) return { ok: false, error: NO_CART }
+      if (store.loading()) return { ok: false, error: CART_BUSY }
+
+      patchState(store, { loading: true, error: null })
+
+      try {
+        patchState(store, { cart: await request(cart), loading: false })
+        return { ok: true }
+      } catch (error) {
+        const message = errorMessage(error)
+        patchState(store, { loading: false, error: message })
+        return { ok: false, error: message }
+      }
+    }
 
     return {
       load: rxMethod<void>(
@@ -219,94 +255,77 @@ export const CartStore = signalStore(
         )
       ),
 
-      updateCart: rxMethod<HttpTypes.StoreUpdateCart>(
-        pipe(
-          filter(() => !!store.cart() && !store.loading()),
-          tap(() => patchState(store, { loading: true, error: null })),
-          switchMap((body) =>
-            from(sdk.store.cart.update(store.cart()!.id, body)).pipe(
-              tapResponse({
-                next: ({ cart }) => patchState(store, { cart, loading: false }),
-                error: (error: unknown) =>
-                  patchState(store, { loading: false, error: String(error) }),
-              })
-            )
-          )
-        )
-      ),
+      updateCart(body: HttpTypes.StoreUpdateCart): Promise<CartMutationResult> {
+        return mutateCart(async (cart) => {
+          const response = await sdk.store.cart.update(cart.id, body, {
+            fields: CART_FIELDS,
+          })
+          return response.cart
+        })
+      },
 
-      addShippingMethod: rxMethod<HttpTypes.StoreAddCartShippingMethods>(
-        pipe(
-          filter(() => !!store.cart() && !store.loading()),
-          tap(() => patchState(store, { loading: true, error: null })),
-          switchMap((body) =>
-            from(sdk.store.cart.addShippingMethod(store.cart()!.id, body)).pipe(
-              tapResponse({
-                next: ({ cart }) => patchState(store, { cart, loading: false }),
-                error: (error: unknown) =>
-                  patchState(store, { loading: false, error: String(error) }),
-              })
-            )
+      addShippingMethod(
+        body: HttpTypes.StoreAddCartShippingMethods
+      ): Promise<CartMutationResult> {
+        return mutateCart(async (cart) => {
+          const response = await sdk.store.cart.addShippingMethod(
+            cart.id,
+            body,
+            { fields: CART_FIELDS }
           )
-        )
-      ),
+          return response.cart
+        })
+      },
 
       /**
-       * The response doesn't include the cart (just the payment
-       * collection), so on success we refetch it — that's the only reason
-       * `fetchCart` runs here instead of a plain `patchState`.
+       * The response is the payment collection, not the cart — so the cart
+       * is refetched to pick up the new session the Review step checks for.
        */
-      createPaymentSession: rxMethod<HttpTypes.StoreInitializePaymentSession>(
-        pipe(
-          filter(() => !!store.cart() && !store.loading()),
-          tap(() => patchState(store, { loading: true, error: null })),
-          switchMap((body) => {
-            const cart = store.cart()!
-
-            return from(
-              sdk.store.payment.initiatePaymentSession(cart, body)
-            ).pipe(
-              tapResponse({
-                next: () => {},
-                error: (error: unknown) =>
-                  patchState(store, { loading: false, error: String(error) }),
-              }),
-              switchMap(() => fetchCart(cart.id))
-            )
+      createPaymentSession(
+        body: HttpTypes.StoreInitializePaymentSession
+      ): Promise<CartMutationResult> {
+        return mutateCart(async (cart) => {
+          await sdk.store.payment.initiatePaymentSession(cart, body)
+          const response = await sdk.store.cart.retrieve(cart.id, {
+            fields: CART_FIELDS,
           })
-        )
-      ),
+          return response.cart
+        })
+      },
 
-      complete: rxMethod<void>(
-        pipe(
-          filter(() => !!store.cart() && !store.loading()),
-          tap(() => patchState(store, { loading: true, error: null })),
-          switchMap(() =>
-            from(sdk.store.cart.complete(store.cart()!.id)).pipe(
-              tapResponse({
-                next: (response) => {
-                  if (response.type === "order") {
-                    patchState(store, {
-                      loading: false,
-                      completedOrder: response.order,
-                      cart: null,
-                    })
-                    cartIdService.clear()
-                  } else {
-                    patchState(store, {
-                      loading: false,
-                      error: response.error.message,
-                      cart: response.cart,
-                    })
-                  }
-                },
-                error: (error: unknown) =>
-                  patchState(store, { loading: false, error: String(error) }),
-              })
-            )
-          )
-        )
-      ),
+      /**
+       * Places the order. On success the cart is spent: it's dropped from
+       * state and the `cart_id` cookie is cleared, so the next purchase
+       * starts a fresh cart.
+       */
+      async complete(): Promise<CompleteCartResult> {
+        const cart = store.cart()
+        if (!cart) return { kind: "failed", message: NO_CART }
+        if (store.loading()) return { kind: "failed", message: CART_BUSY }
+
+        patchState(store, { loading: true, error: null })
+
+        try {
+          const response = await sdk.store.cart.complete(cart.id)
+
+          if (response.type === "order") {
+            patchState(store, { cart: null, loading: false })
+            cartIdService.clear()
+            return { kind: "order", order: response.order }
+          }
+
+          patchState(store, {
+            cart: response.cart,
+            loading: false,
+            error: response.error.message,
+          })
+          return { kind: "rejected", message: response.error.message }
+        } catch (error) {
+          const message = errorMessage(error)
+          patchState(store, { loading: false, error: message })
+          return { kind: "failed", message }
+        }
+      },
 
       getCart(): HttpTypes.StoreCart | null {
         return store.cart()

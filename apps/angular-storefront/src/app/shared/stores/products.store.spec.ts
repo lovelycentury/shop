@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { MEDUSA_SDK } from '../../core/services/medusa-sdk';
+import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { ProductsStore } from './products.store';
 
 type Retrieve = (id: string, query: { region_id: string }) => Promise<unknown>;
 
 function setup(retrieve: Retrieve) {
   TestBed.configureTestingModule({
-    providers: [{ provide: MEDUSA_SDK, useValue: { store: { product: { retrieve } } } }],
+    providers: [{ provide: MedusaSdk, useValue: { store: { product: { retrieve } } } }],
   });
 
   return TestBed.inject(ProductsStore);

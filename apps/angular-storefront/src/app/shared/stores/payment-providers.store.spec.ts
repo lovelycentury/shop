@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { MEDUSA_SDK } from '../../core/services/medusa-sdk';
+import { MedusaSdk } from '../../core/services/medusa-sdk';
 import { PaymentProvidersStore } from './payment-providers.store';
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function setup(listPaymentProviders: (query: { region_id: string }) => Promise<unknown>) {
   TestBed.configureTestingModule({
-    providers: [{ provide: MEDUSA_SDK, useValue: { store: { payment: { listPaymentProviders } } } }],
+    providers: [{ provide: MedusaSdk, useValue: { store: { payment: { listPaymentProviders } } } }],
   });
 
   return TestBed.inject(PaymentProvidersStore);

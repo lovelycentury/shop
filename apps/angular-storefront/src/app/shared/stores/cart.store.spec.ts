@@ -1,7 +1,7 @@
 import { signal } from "@angular/core"
 import { TestBed } from "@angular/core/testing"
 import { vi } from "vitest"
-import { MEDUSA_SDK } from "../../core/services/medusa-sdk"
+import { MedusaSdk } from "../../core/services/medusa-sdk"
 import { CartIdService } from "../../core/services/cart-id"
 import { CartStore } from "./cart.store"
 
@@ -9,7 +9,8 @@ const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 function setup(
   cartMethods: Record<string, unknown>,
-  initialCartId: string | null = null
+  initialCartId: string | null = null,
+  paymentMethods: Record<string, unknown> = {}
 ) {
   const cartIdService = {
     cartId: signal<string | null>(initialCartId),
@@ -20,8 +21,8 @@ function setup(
   TestBed.configureTestingModule({
     providers: [
       {
-        provide: MEDUSA_SDK,
-        useValue: { store: { cart: cartMethods, payment: {} } },
+        provide: MedusaSdk,
+        useValue: { store: { cart: cartMethods, payment: paymentMethods } },
       },
       { provide: CartIdService, useValue: cartIdService },
     ],
@@ -175,7 +176,98 @@ describe("CartStore", () => {
     expect(store.getCart()?.items).toEqual([])
   })
 
-  it("complete() stores the order and clears the cart id on success", async () => {
+  it("updateCart resolves ok and stores the updated cart", async () => {
+    const retrieve = vi
+      .fn()
+      .mockResolvedValue({ cart: { id: "cart_1", items: [] } })
+    const update = vi
+      .fn()
+      .mockResolvedValue({ cart: { id: "cart_1", items: [], email: "a@b.co" } })
+    const { store } = setup({ retrieve, update }, "cart_1")
+    await seedCart(store)
+
+    const result = await store.updateCart({ email: "a@b.co" })
+
+    expect(result).toEqual({ ok: true })
+    expect(update).toHaveBeenCalledWith(
+      "cart_1",
+      { email: "a@b.co" },
+      { fields: "*payment_collection.payment_sessions" }
+    )
+    expect(store.getCart()?.email).toBe("a@b.co")
+    expect(store.loading()).toBe(false)
+  })
+
+  it("a cart mutation resolves with the error message on failure", async () => {
+    const retrieve = vi
+      .fn()
+      .mockResolvedValue({ cart: { id: "cart_1", items: [] } })
+    const addShippingMethod = vi
+      .fn()
+      .mockRejectedValue(new Error("Shipping option not available"))
+    const { store } = setup({ retrieve, addShippingMethod }, "cart_1")
+    await seedCart(store)
+
+    const result = await store.addShippingMethod({ option_id: "so_1" })
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Shipping option not available",
+    })
+    expect(store.loading()).toBe(false)
+  })
+
+  it("refuses a second cart mutation while one is in flight", async () => {
+    const retrieve = vi
+      .fn()
+      .mockResolvedValue({ cart: { id: "cart_1", items: [] } })
+    let resolveUpdate!: (value: unknown) => void
+    const update = vi.fn(
+      () => new Promise((resolve) => (resolveUpdate = resolve))
+    )
+    const { store } = setup({ retrieve, update }, "cart_1")
+    await seedCart(store)
+
+    const first = store.updateCart({ email: "a@b.co" })
+    const second = await store.updateCart({ email: "c@d.co" })
+    resolveUpdate({ cart: { id: "cart_1", items: [] } })
+    await first
+
+    expect(second.ok).toBe(false)
+    expect(update).toHaveBeenCalledTimes(1)
+  })
+
+  it("createPaymentSession refetches the cart to pick up the new session", async () => {
+    const sessionCart = {
+      id: "cart_1",
+      items: [],
+      payment_collection: { payment_sessions: [{ id: "ps_1" }] },
+    }
+    const retrieve = vi
+      .fn()
+      .mockResolvedValueOnce({ cart: { id: "cart_1", items: [] } })
+      .mockResolvedValueOnce({ cart: sessionCart })
+    const initiatePaymentSession = vi.fn().mockResolvedValue({})
+    const { store } = setup(
+      { retrieve },
+      "cart_1",
+      { initiatePaymentSession }
+    )
+    await seedCart(store)
+
+    const result = await store.createPaymentSession({
+      provider_id: "pp_system_default",
+    })
+
+    expect(result).toEqual({ ok: true })
+    expect(initiatePaymentSession).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "cart_1" }),
+      { provider_id: "pp_system_default" }
+    )
+    expect(store.getCart()).toEqual(sessionCart)
+  })
+
+  it("complete() returns the order and clears the cart on success", async () => {
     const retrieve = vi
       .fn()
       .mockResolvedValue({ cart: { id: "cart_1", items: [] } })
@@ -185,15 +277,14 @@ describe("CartStore", () => {
     const { store, cartIdService } = setup({ retrieve, complete }, "cart_1")
     await seedCart(store)
 
-    store.complete()
-    await flushMicrotasks()
+    const result = await store.complete()
 
-    expect(store.completedOrder()?.id).toBe("order_1")
+    expect(result).toEqual({ kind: "order", order: { id: "order_1" } })
     expect(store.getCart()).toBeNull()
     expect(cartIdService.clear).toHaveBeenCalled()
   })
 
-  it("complete() surfaces a validation error without clearing the cart", async () => {
+  it("complete() reports a rejection without clearing the cart", async () => {
     const errorCart = { id: "cart_1", items: [] }
     const retrieve = vi.fn().mockResolvedValue({ cart: errorCart })
     const complete = vi.fn().mockResolvedValue({
@@ -204,11 +295,25 @@ describe("CartStore", () => {
     const { store, cartIdService } = setup({ retrieve, complete }, "cart_1")
     await seedCart(store)
 
-    store.complete()
-    await flushMicrotasks()
+    const result = await store.complete()
 
+    expect(result).toEqual({ kind: "rejected", message: "Payment required" })
     expect(store.error()).toBe("Payment required")
     expect(store.getCart()).toEqual(errorCart)
+    expect(cartIdService.clear).not.toHaveBeenCalled()
+  })
+
+  it("complete() reports a failed request as failed, not rejected", async () => {
+    const retrieve = vi
+      .fn()
+      .mockResolvedValue({ cart: { id: "cart_1", items: [] } })
+    const complete = vi.fn().mockRejectedValue(new Error("Network down"))
+    const { store, cartIdService } = setup({ retrieve, complete }, "cart_1")
+    await seedCart(store)
+
+    const result = await store.complete()
+
+    expect(result).toEqual({ kind: "failed", message: "Network down" })
     expect(cartIdService.clear).not.toHaveBeenCalled()
   })
 })
