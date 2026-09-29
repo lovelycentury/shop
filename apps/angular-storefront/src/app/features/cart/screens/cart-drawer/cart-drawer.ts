@@ -21,7 +21,7 @@ import {
 } from '@okkly/angular';
 import { iconArrowRight, iconShoppingCart, iconX } from '@okkly/icons';
 import { CartStore } from '../../../../shared/stores/cart.store';
-import { formatPrice } from '../../../products/product-price';
+import { PricePipe } from '../../../../shared/pipes/price-pipe';
 import { CartDrawerState } from '../../cart-drawer.state';
 import { CartDrawerItem } from '../../components/cart-drawer-item/cart-drawer-item';
 
@@ -46,6 +46,7 @@ const DRAWER_CLASSES = 'okkly-component okkly-drawer okkly-drawer--variant-tempo
     OkklyModal,
     OkklySkeleton,
     OkklyTypography,
+    PricePipe,
   ],
   templateUrl: './cart-drawer.html',
   styleUrl: './cart-drawer.scss',
@@ -81,13 +82,7 @@ export class CartDrawer {
   protected readonly currencyCode = computed(() => this.cart.cart()?.currency_code ?? 'usd');
 
   /** Items only — Medusa's `subtotal` also counts a chosen shipping method, which isn't in this list. */
-  protected readonly subtotal = computed(() =>
-    formatPrice({
-      amount: this.cart.cart()?.item_subtotal ?? 0,
-      currencyCode: this.currencyCode(),
-      originalAmount: null,
-    }),
-  );
+  protected readonly subtotal = computed(() => this.cart.cart()?.item_subtotal ?? 0);
 
   /** The cart is known to exist but hasn't landed yet. */
   protected readonly isPending = computed(() => this.cart.cart() === null && this.cart.loading());

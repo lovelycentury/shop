@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { OkklyAlert, OkklyButton, OkklyIcon, OkklySkeleton, OkklyTypography } from '@okkly/angular';
 import { iconCheck } from '@okkly/icons';
 import { OrderStore } from '../../../../shared/stores/order.store';
-import { formatPrice } from '../../../products/product-price';
+import { PricePipe } from '../../../../shared/pipes/price-pipe';
 
 /**
  * Ported from the Vue storefront's `OrderSuccessScreen`. Reads the order by
@@ -14,7 +14,7 @@ import { formatPrice } from '../../../products/product-price';
  */
 @Component({
   selector: 'app-order-success-screen',
-  imports: [OkklyAlert, OkklyButton, OkklyIcon, OkklySkeleton, OkklyTypography, RouterLink],
+  imports: [OkklyAlert, OkklyButton, OkklyIcon, OkklySkeleton, OkklyTypography, PricePipe, RouterLink],
   templateUrl: './order-success-screen.html',
   styleUrl: './order-success-screen.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,10 +41,6 @@ export class OrderSuccessScreen {
       const id = this.orderId();
       if (id) untracked(() => this.orders.loadById(id));
     });
-  }
-
-  protected price(amount: number, currencyCode: string): string {
-    return formatPrice({ amount, currencyCode, originalAmount: null });
   }
 
   protected variantLabel(title: string | null | undefined): string | null {

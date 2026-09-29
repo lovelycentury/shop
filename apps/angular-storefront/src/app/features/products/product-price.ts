@@ -1,4 +1,5 @@
 import type { HttpTypes } from '@medusajs/types';
+import { formatAmount } from '../../shared/models/price';
 
 export type ProductPrice = {
   /** What the customer pays, already in major units (Medusa v2 amounts are decimal). */
@@ -8,18 +9,7 @@ export type ProductPrice = {
   originalAmount: number | null;
 };
 
-/**
- * A fixed locale rather than the visitor's: `Intl` would otherwise group and
- * place the currency symbol one way on the server (Node's locale) and another
- * in the browser, which breaks hydration on every card.
- */
-const PRICE_LOCALE = 'en-US';
-
-export const formatPrice = ({ amount, currencyCode }: ProductPrice): string =>
-  new Intl.NumberFormat(PRICE_LOCALE, {
-    style: 'currency',
-    currency: currencyCode.toUpperCase(),
-  }).format(amount);
+export const formatPrice = ({ amount, currencyCode }: ProductPrice): string => formatAmount(amount, currencyCode);
 
 export const formatOriginalPrice = (price: ProductPrice): string | null =>
   price.originalAmount === null ? null : formatPrice({ ...price, amount: price.originalAmount });

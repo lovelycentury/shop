@@ -2,15 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, effect, forwardRef, injec
 import { form, submit } from '@angular/forms/signals';
 import { OkklyRadio, OkklyRadioGroup, OkklySkeleton, OkklyTypography } from '@okkly/angular';
 import { CartStore } from '../../../../shared/stores/cart.store';
+import { PricePipe } from '../../../../shared/pipes/price-pipe';
 import { ShippingOptionsStore } from '../../../../shared/stores/shipping-options.store';
-import { formatPrice } from '../../../products/product-price';
 import { deliverySchema, visibleError } from '../../checkout-forms';
 import { CHECKOUT_STEP, CheckoutPage, type CheckoutStepHandle } from '../../checkout-page';
 
 /** Ported from the Vue storefront's `DeliveryStep`: picks the cart's shipping option. */
 @Component({
   selector: 'app-delivery-step',
-  imports: [OkklyRadio, OkklyRadioGroup, OkklySkeleton, OkklyTypography],
+  imports: [OkklyRadio, OkklyRadioGroup, OkklySkeleton, OkklyTypography, PricePipe],
   providers: [{ provide: CHECKOUT_STEP, useExisting: forwardRef(() => DeliveryStep) }],
   template: `
     <h1 okklyTypography variant="h2">Delivery</h1>
@@ -41,7 +41,7 @@ import { CHECKOUT_STEP, CheckoutPage, type CheckoutStepHandle } from '../../chec
             <label class="step-option" [class.step-option--selected]="option.id === form.shippingOptionId().value()">
               <okkly-radio [value]="option.id" [attr.aria-label]="option.name" />
               <span okklyTypography variant="label-md" class="step-option__name">{{ option.name }}</span>
-              <span okklyTypography variant="label-md">{{ price(option.calculated_price?.calculated_amount ?? 0) }}</span>
+              <span okklyTypography variant="label-md">{{ option.calculated_price?.calculated_amount ?? 0 | price: currencyCode() }}</span>
             </label>
           }
         </okkly-radio-group>
@@ -61,6 +61,7 @@ export class DeliveryStep implements CheckoutStepHandle {
   protected readonly options = inject(ShippingOptionsStore);
 
   protected readonly error = visibleError;
+  protected readonly currencyCode = computed(() => this.page.cart()?.currency_code ?? 'usd');
 
   private readonly model = signal({
     shippingOptionId: this.page.cart()?.shipping_methods?.[0]?.shipping_option_id ?? '',
@@ -96,10 +97,6 @@ export class DeliveryStep implements CheckoutStepHandle {
         field.value.set(first.id);
       }
     });
-  }
-
-  protected price(amount: number): string {
-    return formatPrice({ amount, currencyCode: this.page.cart()?.currency_code ?? 'usd', originalAmount: null });
   }
 
   async submit(): Promise<void> {

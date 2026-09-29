@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { OkklyIcon, OkklyTypography } from '@okkly/angular';
 import { iconImage } from '@okkly/icons';
 import type { HttpTypes } from '@medusajs/types';
-import { formatPrice } from '../../../products/product-price';
+import { formatAmount } from '../../../../shared/models/price';
+import { PricePipe } from '../../../../shared/pipes/price-pipe';
 
 /**
  * The cart's items and totals beside the checkout steps, ported from the
@@ -11,7 +12,7 @@ import { formatPrice } from '../../../products/product-price';
  */
 @Component({
   selector: 'app-order-summary',
-  imports: [OkklyIcon, OkklyTypography],
+  imports: [OkklyIcon, OkklyTypography, PricePipe],
   template: `
     <ul class="order-summary__items">
       @for (item of items(); track item.id) {
@@ -33,7 +34,7 @@ import { formatPrice } from '../../../products/product-price';
             }
           </div>
           <span okklyTypography variant="label-sm" class="order-summary__item-price">
-            {{ price(item.unit_price * item.quantity) }}
+            {{ item.unit_price * item.quantity | price: currencyCode() }}
           </span>
         </li>
       }
@@ -44,7 +45,7 @@ import { formatPrice } from '../../../products/product-price';
     <div class="order-summary__totals">
       <div class="order-summary__row">
         <span okklyTypography variant="body-sm" color="secondary">Subtotal</span>
-        <span okklyTypography variant="body-sm">{{ price(subtotal()) }}</span>
+        <span okklyTypography variant="body-sm">{{ subtotal() | price: currencyCode() }}</span>
       </div>
       <div class="order-summary__row">
         <span okklyTypography variant="body-sm" color="secondary">Shipping</span>
@@ -53,7 +54,7 @@ import { formatPrice } from '../../../products/product-price';
       <hr class="order-summary__divider" />
       <div class="order-summary__row">
         <span okklyTypography variant="label-md">Total</span>
-        <span okklyTypography variant="h4">{{ price(total()) }}</span>
+        <span okklyTypography variant="h4">{{ total() | price: currencyCode() }}</span>
       </div>
     </div>
 
@@ -77,14 +78,10 @@ export class OrderSummary {
 
   protected readonly formattedShipping = computed(() => {
     const shipping = this.shipping();
-    return shipping === null ? 'Calculated next' : this.price(shipping);
+    return shipping === null ? 'Calculated next' : formatAmount(shipping, this.currencyCode());
   });
 
   protected variantLabel(item: HttpTypes.StoreCartLineItem): string | null {
     return item.variant_title?.replace(/\s*\/\s*/g, ' · ') ?? null;
-  }
-
-  protected price(amount: number): string {
-    return formatPrice({ amount, currencyCode: this.currencyCode(), originalAmount: null });
   }
 }

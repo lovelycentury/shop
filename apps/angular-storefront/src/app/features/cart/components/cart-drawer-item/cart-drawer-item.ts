@@ -3,11 +3,11 @@ import { OkklyIcon, OkklyTypography } from '@okkly/angular';
 import { iconImage, iconX } from '@okkly/icons';
 import type { HttpTypes } from '@medusajs/types';
 import { QuantityStepper } from '../../../../shared/components/quantity-stepper/quantity-stepper';
-import { formatPrice } from '../../../products/product-price';
+import { PricePipe } from '../../../../shared/pipes/price-pipe';
 
 @Component({
   selector: 'app-cart-drawer-item',
-  imports: [OkklyIcon, OkklyTypography, QuantityStepper],
+  imports: [OkklyIcon, OkklyTypography, PricePipe, QuantityStepper],
   template: `
     <div class="cart-item__media">
       @if (item().thumbnail; as thumbnail) {
@@ -38,7 +38,7 @@ import { formatPrice } from '../../../products/product-price';
       }
 
       <div class="cart-item__row">
-        <span okklyTypography variant="label-md">{{ formattedPrice() }}</span>
+        <span okklyTypography variant="label-md">{{ item().unit_price | price: currencyCode() }}</span>
         <app-quantity-stepper
           [value]="item().quantity"
           (valueChange)="updateQuantity.emit($event)"
@@ -143,9 +143,5 @@ export class CartDrawerItem {
    */
   protected readonly variantLabel = computed(
     () => this.item().variant_title?.replace(/\s*\/\s*/g, ' · ') ?? null,
-  );
-
-  protected readonly formattedPrice = computed(() =>
-    formatPrice({ amount: this.item().unit_price, currencyCode: this.currencyCode(), originalAmount: null }),
   );
 }

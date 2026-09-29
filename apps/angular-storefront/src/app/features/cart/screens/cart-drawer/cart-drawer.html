@@ -49,7 +49,7 @@
         <footer class="cart-drawer__footer">
           <div class="cart-drawer__subtotal-row">
             <span okklyTypography variant="label-md" color="secondary">Subtotal</span>
-            <span okklyTypography variant="h4">{{ subtotal() }}</span>
+            <span okklyTypography variant="h4">{{ subtotal() | price: currencyCode() }}</span>
           </div>
           <span okklyTypography variant="caption" color="muted">Shipping &amp; taxes calculated at checkout</span>
 

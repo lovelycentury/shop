@@ -32,7 +32,7 @@
                 <span okklyTypography variant="caption" color="muted">{{ label }} · Qty {{ item.quantity }}</span>
               }
             </div>
-            <span okklyTypography variant="label-md">{{ price(item.unit_price * item.quantity, order.currency_code) }}</span>
+            <span okklyTypography variant="label-md">{{ item.unit_price * item.quantity | price: order.currency_code }}</span>
           </li>
         }
       </ul>
@@ -41,7 +41,7 @@
 
       <div class="order-success__row">
         <span okklyTypography variant="label-md">Total</span>
-        <span okklyTypography variant="h4">{{ price(order.total, order.currency_code) }}</span>
+        <span okklyTypography variant="h4">{{ order.total | price: order.currency_code }}</span>
       </div>
 
       @if (order.shipping_address; as address) {
