@@ -66,6 +66,15 @@ export class ShippingStep implements CheckoutStepHandle {
     () => this.form().errors().find((error) => error.kind === 'server')?.message ?? null,
   );
 
+  /**
+   * Edited but not saved. `submitting` excludes the save itself: moving on
+   * to Delivery happens inside the submit action, while the form is still
+   * dirty — that navigation must not ask.
+   */
+  hasUnsavedChanges(): boolean {
+    return this.form().dirty() && !this.form().submitting();
+  }
+
   async submit(): Promise<void> {
     await submit(this.form, async () => {
       const result = await this.cartStore.updateCart(toUpdateCartBody(this.model()));

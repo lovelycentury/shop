@@ -13,6 +13,8 @@ import { CHECKOUT_STEPS, type CheckoutStep, parseCheckoutStep } from './checkout
 export interface CheckoutStepHandle {
   submit(): Promise<void>;
   readonly isPending: Signal<boolean>;
+  /** Input the visitor would lose by leaving; steps with nothing to type in can leave it out. */
+  hasUnsavedChanges?(): boolean;
 }
 
 /** Each step provides itself under this token, so the screen can query the active one. */

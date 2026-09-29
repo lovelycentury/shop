@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { checkoutStepGuard, orderSuccessGuard } from './features/checkout/checkout.guards';
 
 export const routes: Routes = [
@@ -18,6 +19,7 @@ export const routes: Routes = [
     path: 'checkout',
     title: 'Checkout',
     canActivate: [checkoutStepGuard],
+    canDeactivate: [unsavedChangesGuard],
     // The step lives in `?step=`, which the router doesn't re-run guards for
     // by default — every step change has to pass the guard.
     runGuardsAndResolvers: 'paramsOrQueryParamsChange',

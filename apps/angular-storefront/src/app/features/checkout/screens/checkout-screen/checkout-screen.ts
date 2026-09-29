@@ -14,6 +14,7 @@ import {
   type StepperStep,
 } from '@okkly/angular';
 import { iconArrowRight, iconRefreshCw, iconShoppingCart } from '@okkly/icons';
+import type { HasUnsavedChanges } from '../../../../core/guards/unsaved-changes.guard';
 import { CartStore } from '../../../../shared/stores/cart.store';
 import { RegionsStore } from '../../../../shared/stores/regions.store';
 import type { CheckoutStep } from '../../checkout.constants';
@@ -67,7 +68,7 @@ const ACTION_LABELS: Record<CheckoutStep, string> = {
   styleUrl: './checkout-screen.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CheckoutScreen {
+export class CheckoutScreen implements HasUnsavedChanges {
   protected readonly page = inject(CheckoutPage);
   private readonly cartStore = inject(CartStore);
 
@@ -95,6 +96,11 @@ export class CheckoutScreen {
       this.cartStore.refresh();
       inject(RegionsStore).load();
     }
+  }
+
+  /** The route's `unsavedChangesGuard` asks the screen; the form lives in the active step. */
+  hasUnsavedChanges(): boolean {
+    return this.activeStep()?.hasUnsavedChanges?.() ?? false;
   }
 
   protected submitActiveStep(): void {
