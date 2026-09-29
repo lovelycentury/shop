@@ -28,6 +28,9 @@ const initialState: CartState = {
   completedOrder: null,
 }
 
+/** `addItem` has no line item id yet, so its pending marker is keyed by variant. */
+const addPendingKey = (variantId: string) => `add:${variantId}`
+
 const removePendingLineItemId = (id: string) => (state: CartState) => ({
   pendingLineItemIds: state.pendingLineItemIds.filter(
     (pendingId) => pendingId !== id
@@ -111,7 +114,7 @@ export const CartStore = signalStore(
         quantity: number
         regionId: string
       }): Promise<void> {
-        const pendingKey = `add:${params.variantId}`
+        const pendingKey = addPendingKey(params.variantId)
         if (store.pendingLineItemIds().includes(pendingKey)) {
           return
         }
@@ -307,6 +310,11 @@ export const CartStore = signalStore(
 
       getCart(): HttpTypes.StoreCart | null {
         return store.cart()
+      },
+
+      /** Whether an `addItem` for this variant is still in flight. */
+      isAdding(variantId: string): boolean {
+        return store.pendingLineItemIds().includes(addPendingKey(variantId))
       },
     }
   })

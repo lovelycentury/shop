@@ -102,12 +102,16 @@ describe("CartStore", () => {
       regionId: "region_1",
     })
 
+    expect(store.isAdding("variant_1")).toBe(true)
+    expect(store.isAdding("variant_2")).toBe(false)
+
     resolveCreateLineItem({
       cart: { id: "cart_1", items: [{ id: "li_1", quantity: 1 }] },
     })
     await Promise.all([first, second])
 
     expect(createLineItem).toHaveBeenCalledTimes(1)
+    expect(store.isAdding("variant_1")).toBe(false)
   })
 
   it("dedupes concurrent updateLineItem calls for the same line item", async () => {
