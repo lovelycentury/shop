@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { checkoutStepGuard, orderSuccessGuard } from './features/checkout/checkout.guards';
 
 export const routes: Routes = [
   {
@@ -16,12 +17,17 @@ export const routes: Routes = [
   {
     path: 'checkout',
     title: 'Checkout',
+    canActivate: [checkoutStepGuard],
+    // The step lives in `?step=`, which the router doesn't re-run guards for
+    // by default — every step change has to pass the guard.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () =>
       import('./features/checkout/screens/checkout-screen/checkout-screen').then((m) => m.CheckoutScreen),
   },
   {
     path: 'order/success',
     title: 'Order confirmed',
+    canActivate: [orderSuccessGuard],
     loadComponent: () =>
       import('./features/checkout/screens/order-success-screen/order-success-screen').then(
         (m) => m.OrderSuccessScreen,

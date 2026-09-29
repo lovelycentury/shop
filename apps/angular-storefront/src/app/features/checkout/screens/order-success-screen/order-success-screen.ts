@@ -25,10 +25,11 @@ export class OrderSuccessScreen {
   protected readonly iconCheck = iconCheck;
 
   private readonly queryParams = toSignal(inject(ActivatedRoute).queryParamMap, { requireSync: true });
+  // Always present: `orderSuccessGuard` sends visits without one home.
   protected readonly orderId = computed(() => this.queryParams().get('order_id') ?? '');
 
   protected readonly order = computed(() => this.orders.getById(this.orderId()) ?? null);
-  protected readonly error = computed(() => (this.orderId() ? this.orders.error() : 'The order link looks incomplete.'));
+  protected readonly error = this.orders.error;
   protected readonly isPending = computed(() => this.error() === null && this.order() === null);
 
   constructor() {
