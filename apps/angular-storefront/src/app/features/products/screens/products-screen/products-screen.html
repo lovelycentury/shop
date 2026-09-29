@@ -1,0 +1,49 @@
+<section #root class="products-screen">
+  <header class="products-screen__header">
+    <h1 okklyTypography variant="h2">Products</h1>
+    @if (!isPending() && !isError() && list.count() > 0) {
+      <p okklyTypography variant="body-sm" color="muted">
+        {{ list.count() }} {{ list.count() === 1 ? 'product' : 'products' }}
+      </p>
+    }
+  </header>
+
+  @if (isError()) {
+    <okkly-alert severity="danger" title="Products could not be loaded" class="products-screen__alert">
+      {{ error() ?? 'Something went wrong while contacting the store.' }}
+      <button okklyButton okklyAlertAction variant="soft" size="small" (click)="refetch()">
+        <okkly-icon okklyButtonStartIcon [icon]="iconRefreshCw" fontSize="small" />
+        Retry
+      </button>
+    </okkly-alert>
+  } @else if (!isPending() && list.products().length === 0) {
+    <div class="products-screen__empty">
+      <okkly-icon [icon]="iconPackage" fontSize="large" />
+      <p okklyTypography variant="label-md">No products here</p>
+      <p okklyTypography variant="body-sm" color="muted" align="center">{{ emptyCopy().text }}</p>
+      @if (emptyCopy().reason === 'past-end') {
+        <button okklyButton variant="soft" size="small" (click)="goToPage(1)">Back to first page</button>
+      }
+    </div>
+  } @else {
+    <app-product-grid
+      [products]="list.products()"
+      [pending]="isPending()"
+      [stale]="list.stale()"
+      [skeletonCount]="pageSize"
+    />
+
+    @if (list.pageCount() > 1) {
+      <nav class="products-screen__pagination" aria-label="Products pagination">
+        <okkly-pagination
+          [count]="list.pageCount()"
+          [page]="page()"
+          (pageChange)="onPageChange($event)"
+          [disabled]="isPending()"
+          [showFirstButton]="true"
+          [showLastButton]="true"
+        />
+      </nav>
+    }
+  }
+</section>

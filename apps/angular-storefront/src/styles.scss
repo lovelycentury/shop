@@ -1,2 +1,13 @@
-/* You can add global styles to this file, and also import other style files */
 @use '@okkly/design-system/styles/index.scss' as *;
+@use '@okkly/angular/style.css';
+
+// The design system only sets `font-family` inside its own component rules,
+// and nothing sets a document-level text colour — plain elements would fall
+// back to the UA's serif/black. `body` (not an app wrapper) so overlays
+// rendered outside the app root inherit it too.
+body {
+  margin: 0;
+  background: var(--okkly-bg-canvas);
+  color: var(--okkly-text-primary);
+  font-family: var(--okkly-font-family-sans);
+}

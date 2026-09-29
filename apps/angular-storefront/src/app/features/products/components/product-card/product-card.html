@@ -1,0 +1,46 @@
+<a [routerLink]="['/products', product().id]" class="product-card">
+  <div class="product-card__media">
+    @if (image(); as src) {
+      <img
+        [src]="src"
+        [alt]="product().title"
+        class="product-card__image"
+        [attr.loading]="priority() ? 'eager' : 'lazy'"
+        decoding="async"
+      />
+    } @else {
+      <!-- A product with no image still needs to fill its slot, or the row's
+           cards end up different heights. -->
+      <div class="product-card__image-fallback" aria-hidden="true">
+        <okkly-icon [icon]="iconImage" fontSize="large" />
+      </div>
+    }
+  </div>
+
+  <div class="product-card__body">
+    <span okklyTypography variant="label-md" class="product-card__title">{{ product().title }}</span>
+
+    @if (subtitle(); as subtitle) {
+      <span okklyTypography variant="caption" color="muted" [noWrap]="true" class="product-card__subtitle">
+        {{ subtitle }}
+      </span>
+    }
+
+    <div class="product-card__price">
+      @if (formattedPrice(); as price) {
+        <span
+          okklyTypography
+          variant="h4"
+          [class.product-card__price-current--sale]="formattedOriginalPrice() !== null"
+        >
+          {{ price }}
+        </span>
+        @if (formattedOriginalPrice(); as original) {
+          <s okklyTypography variant="body-sm" color="muted">{{ original }}</s>
+        }
+      } @else {
+        <span okklyTypography variant="body-sm" color="muted">Price unavailable</span>
+      }
+    </div>
+  </div>
+</a>
