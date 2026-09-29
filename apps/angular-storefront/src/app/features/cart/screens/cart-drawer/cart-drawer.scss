@@ -1,0 +1,93 @@
+// Set on the paper, not the drawer root: the root is `OkklyModal`'s own
+// element, out of reach of this component's encapsulated styles. The
+// paper's `width`/`border` read these custom properties on itself, so
+// declaring them here overrides the root's defaults.
+.cart-drawer {
+  --okkly-drawer-width: 25rem;
+  --okkly-drawer-border-color: var(--okkly-glass-border);
+
+  max-width: 100vw;
+  color: var(--okkly-text-primary);
+}
+
+.cart-drawer__header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem;
+
+  > h2 {
+    margin: 0;
+  }
+}
+
+.cart-drawer__divider {
+  flex-shrink: 0;
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: none;
+  background: var(--okkly-border-subtle);
+}
+
+.cart-drawer__loading {
+  display: flex;
+  gap: 0.875rem;
+  padding: var(--okkly-space-5);
+}
+
+.cart-drawer__loading-lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--okkly-space-2);
+}
+
+.cart-drawer__empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--okkly-space-2);
+  padding: var(--okkly-space-16) var(--okkly-space-6);
+  color: var(--okkly-text-muted);
+
+  > p {
+    margin: 0;
+  }
+}
+
+.cart-drawer__list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--okkly-space-5);
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--okkly-space-5);
+  list-style: none;
+
+  > li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--okkly-space-5);
+  }
+}
+
+.cart-drawer__footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.875rem;
+  padding: var(--okkly-space-5);
+}
+
+.cart-drawer__subtotal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
