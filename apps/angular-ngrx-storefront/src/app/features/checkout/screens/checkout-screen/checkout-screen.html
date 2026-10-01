@@ -1,0 +1,67 @@
+<section class="checkout-screen">
+  @if (page.loadError(); as error) {
+    <okkly-alert severity="danger" title="Checkout could not be loaded" class="checkout-screen__alert">
+      {{ error }}
+      <button okklyButton okklyAlertAction variant="soft" size="small" (click)="page.refetchCart()">
+        <okkly-icon okklyButtonStartIcon [icon]="iconRefreshCw" fontSize="small" />
+        Retry
+      </button>
+    </okkly-alert>
+  } @else if (page.isPending()) {
+    <div class="checkout-screen__loading" aria-busy="true">
+      <okkly-skeleton width="20rem" height="2rem" />
+      <okkly-skeleton variant="rectangular" height="20rem" />
+    </div>
+  } @else if (page.isEmpty()) {
+    <div class="checkout-screen__empty">
+      <okkly-icon [icon]="iconShoppingCart" fontSize="large" />
+      <p okklyTypography variant="label-md">Your cart is empty</p>
+      <p okklyTypography variant="body-sm" color="muted" align="center">Add something to your cart before checking out.</p>
+      <a okklyButton routerLink="/" variant="soft" size="small">Back to shop</a>
+    </div>
+  } @else if (page.cart(); as cart) {
+    <okkly-stepper [steps]="stepperSteps" [activeStep]="page.activeStepIndex()" [alternativeLabel]="true" />
+
+    <div class="checkout-screen__layout">
+      <div class="checkout-screen__content">
+        @switch (page.step()) {
+          @case ('shipping') {
+            <app-shipping-step />
+          }
+          @case ('delivery') {
+            <app-delivery-step />
+          }
+          @case ('payment') {
+            <app-payment-step />
+          }
+          @case ('review') {
+            <app-review-step />
+          }
+        }
+      </div>
+
+      <app-order-summary
+        [items]="cart.items ?? []"
+        [currencyCode]="cart.currency_code"
+        [subtotal]="cart.item_subtotal ?? 0"
+        [shipping]="shippingAmount()"
+        [total]="cart.total ?? 0"
+      >
+        <button
+          okklyButton
+          variant="primary"
+          size="large"
+          shape="pill"
+          [fullWidth]="true"
+          [loading]="isSubmitting()"
+          (click)="submitActiveStep()"
+        >
+          {{ actionLabels[page.step()] }}
+          @if (page.step() !== 'review') {
+            <okkly-icon okklyButtonEndIcon [icon]="iconArrowRight" fontSize="small" />
+          }
+        </button>
+      </app-order-summary>
+    </div>
+  }
+</section>

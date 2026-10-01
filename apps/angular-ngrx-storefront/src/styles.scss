@@ -1,0 +1,17 @@
+@use '@okkly/design-system/styles/index.scss' as *;
+@use '@okkly/angular/style.css';
+// `@okkly/angular` has no Drawer component (and ships none of its CSS) — the
+// cart drawer composes `OkklyModal` with the design system's own drawer
+// classes, so those rules come straight from the design system.
+@use '@okkly/design-system/components/Drawer/Drawer.scss';
+
+// The design system only sets `font-family` inside its own component rules,
+// and nothing sets a document-level text colour — plain elements would fall
+// back to the UA's serif/black. `body` (not an app wrapper) so overlays
+// rendered outside the app root inherit it too.
+body {
+  margin: 0;
+  background: var(--okkly-bg-canvas);
+  color: var(--okkly-text-primary);
+  font-family: var(--okkly-font-family-sans);
+}

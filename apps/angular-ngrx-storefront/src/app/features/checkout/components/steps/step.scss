@@ -1,0 +1,63 @@
+// Shared by every checkout step.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--okkly-space-6);
+
+  h1,
+  p {
+    margin: 0;
+  }
+}
+
+.step-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--okkly-space-5);
+}
+
+.step-form__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--okkly-space-4);
+  width: 100%;
+}
+
+.step-form__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--okkly-space-1);
+}
+
+.step-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--okkly-space-3);
+  width: 100%;
+}
+
+.step-option {
+  display: flex;
+  align-items: center;
+  gap: var(--okkly-space-3);
+  padding: var(--okkly-space-4);
+  border: 1px solid var(--okkly-border-default);
+  border-radius: var(--okkly-radius-lg);
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.step-option--selected {
+  border-color: var(--okkly-accent-primary);
+}
+
+.step-option__name {
+  flex: 1 1 auto;
+}
+
+@media (max-width: 640px) {
+  .step-form__pair {
+    grid-template-columns: 1fr;
+  }
+}

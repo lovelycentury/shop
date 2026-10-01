@@ -1,0 +1,61 @@
+<section class="order-success">
+  @if (error(); as error) {
+    <okkly-alert severity="danger" title="We couldn't find that order" class="order-success__alert">
+      {{ error }}
+    </okkly-alert>
+  } @else if (isPending()) {
+    <div class="order-success__loading" aria-busy="true">
+      <okkly-skeleton width="16rem" height="2.5rem" />
+      <okkly-skeleton variant="rectangular" height="12rem" />
+    </div>
+  } @else if (order(); as order) {
+    <div class="order-success__header">
+      <span class="order-success__badge">
+        <okkly-icon [icon]="iconCheck" fontSize="large" />
+      </span>
+      <h1 okklyTypography variant="h1">Thank you for your order</h1>
+      <p okklyTypography variant="body-md" color="secondary">
+        Order #{{ order.display_id }} is confirmed - a receipt has been sent to {{ order.email }}.
+      </p>
+    </div>
+
+    <div class="order-success__card">
+      <ul class="order-success__items">
+        @for (item of order.items ?? []; track item.id) {
+          <li class="order-success__item">
+            @if (item.thumbnail; as thumbnail) {
+              <img [src]="thumbnail" [alt]="item.title" class="order-success__item-image" />
+            }
+            <div class="order-success__item-body">
+              <span okklyTypography variant="label-md">{{ item.title }}</span>
+              @if (variantLabel(item.variant_title); as label) {
+                <span okklyTypography variant="caption" color="muted">{{ label }} · Qty {{ item.quantity }}</span>
+              }
+            </div>
+            <span okklyTypography variant="label-md">{{ item.unit_price * item.quantity | price: order.currency_code }}</span>
+          </li>
+        }
+      </ul>
+
+      <hr class="order-success__divider" />
+
+      <div class="order-success__row">
+        <span okklyTypography variant="label-md">Total</span>
+        <span okklyTypography variant="h4">{{ order.total | price: order.currency_code }}</span>
+      </div>
+
+      @if (order.shipping_address; as address) {
+        <hr class="order-success__divider" />
+        <div class="order-success__address">
+          <span okklyTypography variant="label-sm" color="secondary">Shipping to</span>
+          <span okklyTypography variant="body-sm">
+            {{ address.first_name }} {{ address.last_name }}, {{ address.address_1 }}, {{ address.city }}
+            {{ address.postal_code }}, {{ address.country_code }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <a okklyButton routerLink="/" variant="primary" size="large" shape="pill">Continue shopping</a>
+  }
+</section>

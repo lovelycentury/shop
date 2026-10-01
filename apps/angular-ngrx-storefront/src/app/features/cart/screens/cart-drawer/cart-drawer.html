@@ -1,0 +1,71 @@
+@if (mounted()) {
+  <okkly-modal [open]="isOpen()" [keepMounted]="true" [modalClass]="modalClass()" (close)="close()">
+    <div class="okkly-drawer__paper cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+      <header class="cart-drawer__header">
+        <h2 id="cart-drawer-title" okklyTypography variant="h4">Your cart ({{ itemCount() }})</h2>
+        <button okklyIconButton variant="ghost" aria-label="Close cart" (click)="close()">
+          <okkly-icon [icon]="iconX" fontSize="small" />
+        </button>
+      </header>
+      <hr class="cart-drawer__divider" />
+
+      @if (isPending()) {
+        <div class="cart-drawer__loading" aria-busy="true">
+          <okkly-skeleton variant="rectangular" width="4rem" height="4rem" />
+          <div class="cart-drawer__loading-lines">
+            <okkly-skeleton width="70%" />
+            <okkly-skeleton width="40%" />
+            <okkly-skeleton width="30%" />
+          </div>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="cart-drawer__empty">
+          <okkly-icon [icon]="iconShoppingCart" fontSize="large" />
+          <p okklyTypography variant="label-md">Your cart is empty</p>
+          <p okklyTypography variant="body-sm" color="muted" align="center">
+            Add something you like and it will show up here.
+          </p>
+        </div>
+      } @else {
+        <ul class="cart-drawer__list">
+          @for (item of items(); track item.id; let last = $last) {
+            <li>
+              <app-cart-drawer-item
+                [item]="item"
+                [currencyCode]="currencyCode()"
+                [pending]="isLinePending(item.id)"
+                (updateQuantity)="setQuantity(item.id, $event)"
+                (remove)="removeItem(item.id)"
+              />
+              @if (!last) {
+                <hr class="cart-drawer__divider" />
+              }
+            </li>
+          }
+        </ul>
+
+        <hr class="cart-drawer__divider" />
+
+        <footer class="cart-drawer__footer">
+          <div class="cart-drawer__subtotal-row">
+            <span okklyTypography variant="label-md" color="secondary">Subtotal</span>
+            <span okklyTypography variant="h4">{{ subtotal() | price: currencyCode() }}</span>
+          </div>
+          <span okklyTypography variant="caption" color="muted">Shipping &amp; taxes calculated at checkout</span>
+
+          <button
+            okklyButton
+            variant="primary"
+            size="large"
+            shape="pill"
+            [fullWidth]="true"
+            (click)="goToCheckout()"
+          >
+            Checkout
+            <okkly-icon okklyButtonEndIcon [icon]="iconArrowRight" fontSize="small" />
+          </button>
+        </footer>
+      }
+    </div>
+  </okkly-modal>
+}

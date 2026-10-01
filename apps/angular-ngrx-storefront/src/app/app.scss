@@ -1,0 +1,10 @@
+.app-main {
+  display: block;
+  padding: var(--okkly-space-8) var(--okkly-space-16) var(--okkly-space-16);
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding: var(--okkly-space-6) var(--okkly-space-6) var(--okkly-space-8);
+  }
+}

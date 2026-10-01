@@ -1,0 +1,18 @@
+<div class="header__bar">
+  <a routerLink="/" class="header__brand">
+    <okkly-icon [icon]="iconShoppingCart" fontSize="small" />
+    <span>MEDUSA</span>
+  </a>
+
+  <okkly-badge [badgeContent]="itemCount()" [invisible]="itemCount() === 0" color="dante">
+    <button
+      okklyIconButton
+      variant="ghost"
+      [attr.aria-label]="'Open cart, ' + itemCount() + ' items'"
+      (click)="drawer.open()"
+    >
+      <okkly-icon [icon]="iconShoppingCart" fontSize="small" />
+    </button>
+  </okkly-badge>
+</div>
+<hr class="okkly-component okkly-divider okkly-divider--horizontal" />
